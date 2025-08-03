@@ -1,6 +1,43 @@
-# Getting Started with Create React App
+# eco_front
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Frontend para el procesamiento de informes de cardiología (.docx)
+
+## Características principales
+- Permite cargar un archivo .docx y enviarlo al endpoint https://eco3.onrender.com/generar_informe
+- Descarga automática del informe procesado (.docx)
+- Interfaz moderna con React + Material UI
+
+## Desarrollo local
+
+```sh
+npm install
+npm start
+```
+
+La app estará disponible en http://localhost:3000
+
+## Build de producción
+
+```sh
+npm run build
+```
+
+## Despliegue
+
+Este frontend fue deployado **sin Docker**, utilizando el flujo automático de Windsurf/Netlify (create-react-app):
+- El código fuente fue subido y deployado con el flujo de "Deploy Web App" de Windsurf, que utiliza Netlify por detrás.
+- El sitio quedó publicado en: https://eco.windsurf.build
+
+**Nota:**
+- El Dockerfile está presente para referencia o para futuros despliegues en otras plataformas, pero no fue utilizado en este deploy.
+
+## Estructura del proyecto
+- `src/` — Código fuente React
+- `public/` — Archivos estáticos
+- `Dockerfile` — (opcional, no usado en este deploy)
+
+## Contacto
+Cualquier duda o mejora, contactar a @daquarti
 
 ## Available Scripts
 
