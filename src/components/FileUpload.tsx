@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { Box, Typography, CircularProgress, Paper, Button } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Button, Paper, Typography, CircularProgress } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
@@ -8,174 +8,222 @@ const FileUpload: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [isDragActive, setIsDragActive] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
-
-  const processFiles = async () => {
-    try {
-      // TODO: Replace with production backend URL
-      // const response = await fetch('http://localhost:5001/api/hello', {
-      //   method: 'POST',
-      // });
-      // const data = await response.json();
-      // setMessage(data.message);
-      setMessage('Backend en construcción');
-    } catch (error) {
-      console.error('Error:', error);
-      setMessage('Error al procesar los archivos');
-    }
-  };
-
-  const handleFolderUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files) return;
-
-    setIsLoading(true);
-    setMessage('');
-    const fileNames = Array.from(files).map(file => file.name);
-    setUploadedFiles(fileNames);
-
-    try {
-      setMessage('Archivos cargados exitosamente. Haga clic en Procesar para continuar.');
-    } catch (error) {
-      setMessage('Error al generar el informe. Por favor intente nuevamente.');
-      console.error('Error:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragActive(true);
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragActive(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragActive(false);
-    const items = e.dataTransfer.items;
-    if (items) {
-      const fileInput = document.getElementById('folder-upload') as HTMLInputElement;
-      if (fileInput) {
-        fileInput.files = e.dataTransfer.files;
-        handleFolderUpload({ target: fileInput } as any);
-      }
+
+    const files = Array.from(e.dataTransfer.files);
+    handleFiles(files);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      handleFiles(files);
     }
   };
 
+  const handleFiles = (files: File[]) => {
+    // Solo aceptar archivos .docx y solo uno
+    const docxFile = files.find(file => file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.name.endsWith('.docx'));
+    if (docxFile) {
+      setUploadedFiles([docxFile]);
+      setMessage('');
+    } else {
+      setUploadedFiles([]);
+      setMessage('Solo se permiten archivos .docx');
+    }
+  };
+
+
+
+  const processFiles = async () => {
+    if (uploadedFiles.length === 0) {
+      setMessage('Por favor, seleccione un archivo .docx primero');
+      return;
+    }
+
+    setIsLoading(true);
+    setMessage('');
+    try {
+      const formData = new FormData();
+      formData.append('file', uploadedFiles[0]); // solo uno
+
+      const response = await fetch('https://eco3.onrender.com/generar_informe', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'informe_procesado.docx';
+      document.body.appendChild(a);
+      a.click();
+
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      setMessage('Informe generado exitosamente');
+      setUploadedFiles([]);
+    } catch (error) {
+      console.error('Error:', error);
+      setMessage(error instanceof Error ?
+        `Error: ${error.message}` :
+        'Error al generar el informe');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Limpiar mensaje después de 3 segundos
+  React.useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => {
+        setMessage('');
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
+
   return (
-    <Box sx={{ textAlign: 'center' }}>
-      <input
-        type="file"
-        id="folder-upload"
-        multiple
-        // @ts-ignore - webkitdirectory is a non-standard attribute
-        webkitdirectory=""
-        style={{ display: 'none' }}
-        onChange={handleFolderUpload}
-      />
+    <Box>
       <Paper
         elevation={0}
-        onDragEnter={handleDragEnter}
-        onDragOver={(e) => e.preventDefault()}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
         sx={{
           border: '2px dashed',
-          borderColor: isDragActive ? 'primary.main' : 'grey.300',
-          borderRadius: 2,
-          p: 6,
-          backgroundColor: isDragActive ? 'rgba(25, 118, 210, 0.04)' : 'transparent',
-          transition: 'all 0.2s ease',
+          borderColor: isDragActive ? 'primary.main' : 'primary.light',
+          borderRadius: 3,
+          p: 8,
+          textAlign: 'center',
           cursor: 'pointer',
+          backgroundColor: isDragActive ? 'primary.50' : 'background.default',
+          transition: 'all 0.3s ease',
           '&:hover': {
-            backgroundColor: 'rgba(25, 118, 210, 0.04)',
             borderColor: 'primary.main',
+            backgroundColor: 'primary.50',
+            transform: 'translateY(-2px)'
           },
         }}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onClick={() => document.getElementById('fileInput')?.click()}
       >
-        <label htmlFor="folder-upload" style={{ cursor: 'pointer' }}>
-          <Box sx={{ mb: 2 }}>
-            <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
-          </Box>
-          {!isLoading && !message && (
-            <>
-              <Typography variant="h6" sx={{ mb: 1, color: 'text.primary' }}>
-                Arrastre la carpeta aquí o haga clic para seleccionar
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Se procesarán todos los archivos de ecodoppler contenidos en la carpeta
-              </Typography>
-            </>
-          )}
-          {isLoading && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <CircularProgress size={32} sx={{ mb: 2 }} />
-              <Typography variant="body1" color="text.secondary">
-                Procesando {uploadedFiles.length} archivos...
-              </Typography>
-            </Box>
-          )}
-        </label>
+        <input
+          type="file"
+          id="fileInput"
+          accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          onChange={handleFileSelect}
+          style={{ display: 'none' }}
+        />
+        <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
+        <Typography variant="h6" gutterBottom>
+          Arrastra y suelta archivos aquí
+        </Typography>
+        <Typography variant="body1" color="textSecondary">
+          o haz clic para seleccionar
+        </Typography>
       </Paper>
-      
-      {message && (
-        <Box 
-          sx={{ 
-            mt: 3, 
-            p: 2, 
-            borderRadius: 2,
-            backgroundColor: message.includes('Error') ? 'error.main' : 'success.main',
-            color: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 1
-          }}
-        >
-          {message.includes('Error') ? (
-            <ErrorIcon />
-          ) : (
-            <CheckCircleIcon />
-          )}
-          <Typography>
-            {message}
+
+      {uploadedFiles.length > 0 && (
+        <Paper sx={{ mt: 2, p: 2 }}>
+          <Typography variant="subtitle1" gutterBottom>
+            Archivos seleccionados:
           </Typography>
+          {uploadedFiles.map((file, index) => (
+            <Box
+              key={index}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                mt: 1,
+                p: 1,
+                borderRadius: 1,
+                backgroundColor: 'background.default',
+              }}
+            >
+              <CheckCircleIcon
+                sx={{ mr: 1, color: 'success.main' }}
+                fontSize="small"
+              />
+              <Typography variant="body2">{file.name}</Typography>
+            </Box>
+          ))}
+
+          <Button
+            variant="contained"
+            onClick={processFiles}
+            disabled={isLoading}
+            fullWidth
+            sx={{ 
+              mt: 3,
+              py: 1.5,
+              borderRadius: 2,
+              textTransform: 'none',
+              fontSize: '1.1rem',
+              fontWeight: 500,
+              boxShadow: 2,
+              '&:hover': {
+                transform: 'translateY(-1px)',
+                boxShadow: 3
+              }
+            }}
+          >
+            {isLoading ? 'Procesando...' : 'Procesar Archivos'}
+          </Button>
+        </Paper>
+      )}
+
+      {isLoading && (
+        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+          <CircularProgress />
         </Box>
       )}
 
-      {(uploadedFiles.length > 0 || message) && !isLoading && (
-        <Box sx={{ mt: 3, textAlign: 'left' }}>
-          <Typography variant="subtitle1" sx={{ mb: 1 }}>
-            Archivos seleccionados ({uploadedFiles.length}):
-          </Typography>
-          <Paper elevation={0} sx={{ p: 2, backgroundColor: 'grey.50' }}>
-            {uploadedFiles.slice(0, 3).map((file, index) => (
-              <Typography key={index} variant="body2" color="text.secondary">
-                {file}
-              </Typography>
-            ))}
-            {uploadedFiles.length > 3 && (
-              <Typography variant="body2" color="text.secondary">
-                ...y {uploadedFiles.length - 3} archivos más
-              </Typography>
-            )}
-          </Paper>
-          <Box sx={{ mt: 2, textAlign: 'center' }}>
-            <Button
-              variant="contained"
-              onClick={processFiles}
-              sx={{ mt: 2 }}
-              disabled={isLoading}
-            >
-              Procesar
-            </Button>
-          </Box>
-        </Box>
+
+
+      {message && (
+        <Paper sx={{ mt: 2, p: 2 }}>
+          {message.includes('Error') ? (
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <ErrorIcon sx={{ mr: 1, color: 'error.main' }} />
+              <Typography color="error">{message}</Typography>
+            </Box>
+          ) : (
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <CheckCircleIcon sx={{ mr: 1, color: 'success.main' }} />
+              <Typography>{message}</Typography>
+            </Box>
+          )}
+        </Paper>
       )}
     </Box>
   );

@@ -1,6 +1,6 @@
 # Windsurf Deploys Configuration (Beta)
 # This is an auto-generated file used to store your app deployment configuration. Do not modify.
 # The ID of the project (different from project name) on the provider's system. This is populated as a way to update existing deployments.
-project_id: 323002d9-68aa-43ca-86c8-be134d5ea36b
+project_id: 2bfe48e4-8c39-452c-bdd4-6404e5ba42a9
 # The framework of the web application (examples: nextjs, react, vue, etc.)
 framework: create-react-app

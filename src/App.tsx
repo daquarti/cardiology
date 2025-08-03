@@ -45,9 +45,9 @@ function App() {
             </Typography>
           </Toolbar>
         </AppBar>
-        <Container maxWidth="md" sx={{ py: 6 }}>
+        <Container maxWidth="lg" sx={{ py: 6 }}>
           <Paper elevation={0} sx={{ p: 4, textAlign: 'center', backgroundColor: 'white' }}>
-            <Box sx={{ maxWidth: 600, mx: 'auto' }}>
+            <Box sx={{ maxWidth: 800, mx: 'auto' }}>
               <Typography 
                 variant="h4" 
                 gutterBottom 
@@ -57,7 +57,7 @@ function App() {
                   mb: 3
                 }}
               >
-                Generador de Informes
+                Procesador de Estudios Cardiológicos
               </Typography>
               <Typography 
                 variant="body1" 
@@ -67,7 +67,7 @@ function App() {
                   fontSize: '1.1rem'
                 }}
               >
-                Suba los archivos del ecodoppler para generar el informe automáticamente
+                Suba los archivos del ecodoppler para procesar
               </Typography>
               <FileUpload />
             </Box>
